@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
+import { AlipayModule } from './alipay/alipay.module';
 
 @Module({
-  imports: [],
+  imports: [AlipayModule],
 })
 export class AppModule {}
