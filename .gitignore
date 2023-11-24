@@ -35,4 +35,4 @@ lerna-debug.log*
 !.vscode/extensions.json
 
 # ALIKEY
-src/key/*
+static/key/*
