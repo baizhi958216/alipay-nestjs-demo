@@ -1,21 +1,36 @@
 import { Injectable } from '@nestjs/common';
 import AliPayForm from 'alipay-sdk/lib/form';
-import alipaySdk from 'src/utils/alipay.util';
+import AlipaySdk from 'alipay-sdk';
+import * as fs from 'fs';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AlipayService {
+  private readonly alipaySdk: AlipaySdk;
+  constructor(private readonly configService: ConfigService) {
+    const getConfig = (key: string) => this.configService.get<string>(key);
+
+    this.alipaySdk = new AlipaySdk({
+      appId: getConfig('APPID'),
+      gateway: getConfig('ALIPAY_GATEWAY'),
+      privateKey: fs.readFileSync(getConfig('ALIPAY_PRIVATEKEY'), 'ascii'),
+      alipayRootCertPath: getConfig('ALIPAY_ROOTCERT'),
+      alipayPublicCertPath: getConfig('ALIPAY_PUBLICCERT'),
+      appCertPath: getConfig('ALIPAY_APPCERT'),
+    });
+  }
   async getPayUrl(ProductName: string, ProductValue: string) {
     const bizContent = {
       out_trade_no: Date.now(),
       product_code: 'FAST_INSTANT_TRADE_PAY',
       subject: ProductName,
-      body: '234',
+      body: ProductName,
       total_amount: ProductValue,
     };
-    const result = await alipaySdk.pageExec('alipay.trade.page.pay', {
+    const result = await this.alipaySdk.pageExec('alipay.trade.page.pay', {
       method: 'POST',
       bizContent,
-      returnUrl: 'http://localhost:5174/#/payresult',
+      returnUrl: this.configService.get<string>('ALIPAY_RETURN_URL'),
     });
     return result;
   }
@@ -36,7 +51,7 @@ export class AlipayService {
 
   async manualCheckNotifySign(formData: AliPayForm): Promise<any> {
     return new Promise((resolve) => {
-      const result = alipaySdk.exec(
+      const result = this.alipaySdk.exec(
         'alipay.trade.query',
         {},
         {
